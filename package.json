@@ -1,6 +1,7 @@
 {
   "name": "mock-service",
   "type": "module",
+  "packageManager": "pnpm@9.10.0",
   "scripts": {
     "dev": "wrangler dev src/index.ts",
     "deploy": "wrangler deploy --minify src/index.ts",
