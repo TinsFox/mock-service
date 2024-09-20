@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "wrangler dev src/index.ts",
     "deploy": "prisma generate && wrangler deploy --minify src/index.ts",
-    "test": "vitest"
+    "test": "vitest",
+    "prepare": "prisma generate"
   },
   "dependencies": {
     "@hono/swagger-ui": "^0.4.1",
