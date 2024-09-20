@@ -1,0 +1,22 @@
+name = "mock-service"
+compatibility_date = "2024-09-12"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+DATABASE_URL = "file:./dev.db"
+
+# [[kv_namespaces]]
+# binding = "MY_KV_NAMESPACE"
+# id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+# [[r2_buckets]]
+# binding = "MY_BUCKET"
+# bucket_name = "my-bucket"
+
+[[d1_databases]]
+binding = "DB"
+database_name = ""
+database_id = ""
+
+# [ai]
+# binding = "AI"

@@ -1,0 +1,30 @@
+{
+  "name": "mock-service",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev src/index.ts",
+    "deploy": "wrangler deploy --minify src/index.ts",
+    "test": "vitest",
+    "setup": "prisma generate && prisma migrate deploy && prisma db seed"
+  },
+  "dependencies": {
+    "@hono/swagger-ui": "^0.4.1",
+    "@prisma/adapter-d1": "^5.19.1",
+    "@prisma/client": "5.19.1",
+    "@prisma/extension-accelerate": "^1.1.0",
+    "bcryptjs": "^2.4.3",
+    "hono": "^4.6.2",
+    "@faker-js/faker": "^9.0.1"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.5.6",
+    "@cloudflare/workers-types": "^4.20240919.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^22.5.5",
+    "prisma": "^5.19.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.2",
+    "vitest": "^2.1.1",
+    "wrangler": "^3.78.6"
+  }
+}
