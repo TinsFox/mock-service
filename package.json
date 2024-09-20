@@ -4,9 +4,8 @@
   "packageManager": "pnpm@9.10.0",
   "scripts": {
     "dev": "wrangler dev src/index.ts",
-    "deploy": "wrangler deploy --minify src/index.ts",
-    "test": "vitest",
-    "setup": "prisma generate && prisma migrate deploy && prisma db seed"
+    "deploy": "prisma generate && wrangler deploy --minify src/index.ts",
+    "test": "vitest"
   },
   "dependencies": {
     "@hono/swagger-ui": "^0.4.1",
