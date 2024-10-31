@@ -1,2 +1,3 @@
+[vars]
 SECRET_KEY = ""
 COOKIE_KEY = "token"

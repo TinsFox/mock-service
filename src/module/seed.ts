@@ -81,15 +81,14 @@ async function seedAlbum(prisma: PrismaClient) {
     data: FakerAlbumList,
   })
 }
+
 seedRouter.get("/", async (c) => {
   console.log("🌱 Seeding...")
   console.time(`🌱 Database has been seeded`)
   const adapter = new PrismaD1(c.env.DB)
   const prisma = new PrismaClient({ adapter })
   console.time("🧹 Cleaned up the database...")
-  const albums = await prisma.album.findMany()
-  console.log(albums)
-  await cleanupDb(prisma)
+  // await cleanupDb(prisma)
 
   console.timeEnd("🧹 Cleaned up the database...")
 

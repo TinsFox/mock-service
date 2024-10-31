@@ -1,14 +1,11 @@
 import type { TimingVariables } from "hono/timing"
 import type { RequestIdVariables } from "hono/request-id"
+import type { JwtVariables } from "hono/jwt"
 
 export type Bindings = {
   DB: D1Database
   SECRET_KEY: string
   COOKIE_KEY: string
-}
-
-export type JwtVariables = {
-  jwtPayload: IPayload
 }
 
 export interface IPayload {

@@ -26,7 +26,7 @@ userRouter.get("/", async (c) => {
 
 userRouter.get("/info", async (c) => {
   const payload = c.get("jwtPayload")
-  console.log("payload: ", payload.sub)
+  console.log("payload: ", payload)
   const prisma = getPrisma(c.env.DB)
   const user = await prisma.user.findUnique({
     omit: {
