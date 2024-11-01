@@ -33,5 +33,4 @@ lerna-debug.log*
 .DS_Store
 prisma/dev.db
 
-wrangler.toml
 .dev.vars
