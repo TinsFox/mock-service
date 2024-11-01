@@ -4,7 +4,7 @@ import { Context, Next } from "hono"
 const authWhiteList = ["/api/auth/login", "/api/auth/register", "/api/seed"]
 
 export const authMiddleware = (c: Context, next: Next) => {
-  if (authWhiteList.includes(c.req.path)) {
+  if (authWhiteList?.includes(c.req.path)) {
     return next()
   }
   const jwtMiddleware = jwt({
