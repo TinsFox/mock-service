@@ -28,7 +28,7 @@ const baseUrl = "/api"
 
 app.route(`${baseUrl}/auth`, authRouter)
 
-app.route(`${baseUrl}/album`, albumRouter)
+app.route(`${baseUrl}/albums`, albumRouter)
 
 app.route(`${baseUrl}/user`, userRouter)
 

@@ -29,7 +29,7 @@ albumRouter.get("/", async (c) => {
   })
   return c.json({
     code: 200,
-    data,
+    list: data,
     total,
   })
 })
