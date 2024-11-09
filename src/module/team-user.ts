@@ -1,7 +1,8 @@
 import { Hono } from "hono"
-import { PrismaD1 } from "@prisma/adapter-d1"
-import { PrismaClient } from "@prisma/client"
-import { paginatePrismaQuery } from "../lib/pagination-help"
+
+import { paginateQuery } from "../lib/pagination-help"
+import { teamUsers } from "../db/schema"
+import { dbClientInWorker } from "../db/client.serverless"
 
 const teamUserRouter = new Hono<HonoEnvType>()
 
@@ -20,20 +21,18 @@ teamUserRouter.get("/", async (c) => {
     }
   })
 
-  const adapter = new PrismaD1(c.env.DB)
-  const prisma = new PrismaClient({ adapter })
-
-  const result = await paginatePrismaQuery(
-    prisma,
-    prisma.teamUser,
+  const result = await paginateQuery({
+    table: teamUsers,
     page,
     pageSize,
-    searchParams
-  )
+    searchParams,
+    dbClient: dbClientInWorker(c.env.DATABASE_URL),
+  })
 
   return c.json({
     code: 200,
-    ...result,
+    list: result.data,
+    total: result.total,
   })
 })
 

@@ -2,18 +2,20 @@ import { Hono } from "hono"
 import { setCookie, deleteCookie } from "hono/cookie"
 import { comparePassword, createPassword } from "../lib/crypto"
 import { sign } from "hono/jwt"
-import { getPrisma } from "../lib/client"
-
+import { dbClientInWorker } from "../db/client.serverless"
+import { users } from "../db/schema"
+import { eq } from "drizzle-orm"
 const authRouter = new Hono<HonoEnvType>()
 
 authRouter.post("/register", async (c) => {
   const { email, password } = await c.req.json()
 
-  const prisma = getPrisma(c.env.DB)
-
-  await prisma.user.create({
-    data: { email, password: createPassword(password) },
-  })
+  await dbClientInWorker(c.env.DATABASE_URL)
+    .insert(users)
+    .values({
+      email,
+      password: createPassword(password),
+    })
 
   return c.json({
     status: "ok",
@@ -23,10 +25,14 @@ authRouter.post("/register", async (c) => {
 
 authRouter.post("/login", async (c) => {
   const { email, password } = await c.req.json()
-  const prisma = getPrisma(c.env.DB)
-  const user = await prisma.user.findUnique({
-    where: { email },
-  })
+  console.log("email, password: ", email, password)
+
+  const user = await dbClientInWorker(c.env.DATABASE_URL).query.users.findFirst(
+    {
+      where: eq(users.email, email),
+    }
+  )
+  console.log("user: ", user)
   if (!user) {
     return c.json(
       {
@@ -37,7 +43,7 @@ authRouter.post("/login", async (c) => {
       { status: 400 }
     )
   }
-  if (user && comparePassword(password, user.password)) {
+  if (user && user.password && comparePassword(password, user.password)) {
     const payload = {
       sub: user.id,
       role: "admin",

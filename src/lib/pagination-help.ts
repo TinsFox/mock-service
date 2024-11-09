@@ -1,66 +1,51 @@
-import { PrismaClient, Prisma } from "@prisma/client"
+import { SQLiteTableWithColumns } from "drizzle-orm/sqlite-core"
+import { SQL, count, or, like } from "drizzle-orm"
 
-interface PaginationResult<T> {
-  list: T[]
-  total: number
+interface PaginationParams<T extends SQLiteTableWithColumns<any>> {
+  table: T
   page: number
   pageSize: number
-  totalPages: number
+  searchParams: Record<string, string>
+  dbClient: any
 }
 
-// 添加搜索条件生成函数
-export function generateSearchQuery(searchParams: Record<string, string>) {
-  if (!Object.keys(searchParams).length) return {}
+export async function paginateQuery<T extends SQLiteTableWithColumns<any>>({
+  table,
+  page,
+  pageSize,
+  searchParams,
+  dbClient,
+}: PaginationParams<T>) {
+  // 构建基础查询
+  let whereConditions: SQL[] = []
 
-  const where: any = {}
-
-  Object.entries(searchParams).forEach(([field, value]) => {
-    where[field] = {
-      contains: value,
+  // 处理搜索参数
+  Object.entries(searchParams).forEach(([key, value]) => {
+    if (value && table[key]) {
+      whereConditions.push(like(table[key], `%${value}%`))
     }
   })
 
-  return where
-}
+  // 构建 WHERE 子句
+  const whereClause =
+    whereConditions.length > 0 ? or(...whereConditions) : undefined
 
-export async function paginatePrismaQuery<T>(
-  prisma: PrismaClient,
-  model: {
-    findMany: (args: any) => Promise<T[]>
-    count: (args: any) => Promise<number>
-  },
-  page: number,
-  pageSize: number,
-  searchParams: Record<string, string> = {}
-): Promise<PaginationResult<T>> {
-  const skip = page * pageSize
-  const where = generateSearchQuery(searchParams)
+  // 获取总数
+  const [totalResult] = await dbClient
+    .select({ value: count() })
+    .from(table)
+    .where(whereClause)
 
-  try {
-    const [items, total] = await Promise.all([
-      model.findMany({
-        where,
-        skip,
-        take: pageSize,
-      }),
-      model.count({ where }),
-    ])
+  // 获取分页数据
+  const data = await dbClient
+    .select()
+    .from(table)
+    .where(whereClause)
+    .limit(pageSize)
+    .offset(page * pageSize)
 
-    return {
-      list: items,
-      total,
-      page,
-      pageSize,
-      totalPages: Math.ceil(total / pageSize),
-    }
-  } catch (error) {
-    console.error("Query error:", error)
-    return {
-      list: [],
-      total: 0,
-      page,
-      pageSize,
-      totalPages: 0,
-    }
+  return {
+    data,
+    total: totalResult.value,
   }
 }

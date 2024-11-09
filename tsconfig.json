@@ -16,5 +16,5 @@
     "jsxImportSource": "hono/jsx",
     "esModuleInterop": true
   },
-  "include": ["src/**/*.ts", "prisma/schema.prisma", "./script.ts"]
+  "include": ["src"]
 }

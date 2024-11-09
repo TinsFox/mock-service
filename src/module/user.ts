@@ -1,39 +1,37 @@
 import { Hono } from "hono"
 import { deleteCookie } from "hono/cookie"
-import { getPrisma } from "../lib/client"
+import { dbClient, dbClientInWorker } from "../db/client.serverless"
+import { users } from "../db/schema"
+import { count, eq } from "drizzle-orm"
 
 const userRouter = new Hono<HonoEnvType>()
 
 userRouter.get("/", async (c) => {
   const page = Number(c.req.query("page") || "1")
-  const prisma = getPrisma(c.env.DB)
   const pageSize = Number(c.req.query("pageSize") || "10")
 
-  const [users, total] = await Promise.all([
-    prisma.teamUser.findMany(),
-    prisma.teamUser.count(),
+  const [allUsers, total] = await Promise.all([
+    dbClient.select().from(users),
+    dbClient.select({ value: count() }).from(users),
   ])
 
   return c.json({
     code: 200,
-    users,
+    users: allUsers,
     total,
     page,
     pageSize,
-    totalPages: Math.ceil(total / pageSize),
+    totalPages: Math.ceil(Number(total[0].value) / pageSize),
   })
 })
 
 userRouter.get("/info", async (c) => {
   const payload = c.get("jwtPayload")
-  console.log("payload: ", payload)
-  const prisma = getPrisma(c.env.DB)
-  const user = await prisma.user.findUnique({
-    omit: {
-      password: true,
-    },
-    where: { id: payload.sub },
-  })
+
+  const [user] = await dbClientInWorker(c.env.DATABASE_URL)
+    .select()
+    .from(users)
+    .where(eq(users.id, payload.sub))
   if (!user) {
     deleteCookie(c, c.env.COOKIE_KEY)
     return c.json(
@@ -53,43 +51,19 @@ userRouter.get("/info", async (c) => {
 
 userRouter.get("/:id", async (c) => {
   const { id } = c.req.param()
-  const prisma = getPrisma(c.env.DB)
   if (!id) {
     return c.json({
       code: 400,
       msg: "id is required",
     })
   }
-  // const user = await prisma.user.findUnique({
-  //   where: { id: Number(id) },
-  //   omit: {
-  //     password: true,
-  //   },
-  // })
+  const user = await dbClientInWorker(c.env.DATABASE_URL)
+    .select()
+    .from(users)
+    .where(eq(users.id, id))
   return c.json({
-    user: id,
+    user,
   })
-})
-
-userRouter.post("/", async (c) => {
-  const { name, email } = await c.req.json()
-  const prisma = getPrisma(c.env.DB)
-  // const user = await prisma.user.create({
-  //   data: {
-  //     username: name,
-  //     email,
-  //     birthdate: new Date(),
-  //     registeredAt: new Date(),
-  //   },
-  // })
-  return c.json(
-    {
-      msg: "User created successfully",
-    },
-    {
-      status: 201,
-    }
-  )
 })
 
 export { userRouter }

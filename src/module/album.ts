@@ -1,33 +1,42 @@
 import { Hono } from "hono"
 
-import { PrismaD1 } from "@prisma/adapter-d1"
+import { eq } from "drizzle-orm"
 
-import { PrismaClient } from "@prisma/client"
-import { paginatePrismaQuery } from "../lib/pagination-help"
+import { paginateQuery } from "../lib/pagination-help"
+import { albums } from "../db/schema"
+import { dbClient, dbClientInWorker } from "../db/client.serverless"
 
 const albumRouter = new Hono<HonoEnvType>()
 
 albumRouter.get("/", async (c) => {
   const page = Number(c.req.query("page") || "0")
   const pageSize = Number(c.req.query("pageSize") || "10")
-  const adapter = new PrismaD1(c.env.DB)
-  const prisma = new PrismaClient({ adapter })
-  const albums = await paginatePrismaQuery(prisma, prisma.album, page, pageSize)
+  const searchParams: Record<string, string> = {}
+  const queryParams = c.req.query()
+
+  // 过滤掉 page 和 pageSize 参数
+  Object.entries(queryParams).forEach(([key, value]) => {
+    if (key !== "page" && key !== "pageSize" && value) {
+      searchParams[key] = value
+    }
+  })
+  const { data, total } = await paginateQuery({
+    table: albums,
+    page,
+    pageSize,
+    searchParams,
+    dbClient: dbClientInWorker(c.env.DATABASE_URL),
+  })
   return c.json({
     code: 200,
-    ...albums,
+    data,
+    total,
   })
 })
 
 albumRouter.get("/:id", async (c) => {
   const { id } = c.req.param()
-  const adapter = new PrismaD1(c.env.DB)
-  const prisma = new PrismaClient({ adapter })
-  const album = await prisma.album.findUnique({
-    where: {
-      id,
-    },
-  })
+  const album = await dbClient.select().from(albums).where(eq(albums.id, id))
   if (!album) {
     return c.json(
       {
@@ -45,11 +54,7 @@ albumRouter.get("/:id", async (c) => {
 
 albumRouter.post("/", async (c) => {
   const json = await c.req.json()
-  const adapter = new PrismaD1(c.env.DB)
-  const prisma = new PrismaClient({ adapter })
-  const album = await prisma.album.create({
-    data: json,
-  })
+  const [album] = await dbClient.insert(albums).values(json).returning()
   return c.json({
     status: "ok",
     data: album,

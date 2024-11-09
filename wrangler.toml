@@ -11,10 +11,10 @@ compatibility_flags = ["nodejs_compat_v2"]
 # binding = "MY_BUCKET"
 # bucket_name = "my-bucket"
 
-[[d1_databases]]
-binding = "DB"
-database_name = "mock-service"
-database_id = "68f721e8-ba44-47fd-bcc3-f2989b1292f8"
+# [[d1_databases]]
+# binding = "DB"
+# database_name = ""
+# database_id = ""
 
 
 # [ai]
