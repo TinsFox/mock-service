@@ -27,9 +27,9 @@ export const UpdateTeamUserSchema = z
       description: "Team user's biography",
       example: "Senior Developer",
     }),
-    amount: z.number().optional().openapi({
+    amount: z.string().optional().openapi({
       description: "Team user's amount",
-      example: 1000,
+      example: "1000",
     }),
   })
   .openapi("UpdateTeamUser")

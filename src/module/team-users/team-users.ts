@@ -176,13 +176,6 @@ teamUserRouter.openapi(updateTeamUserRoute, async (c) => {
   const { id } = c.req.valid("param")
   const updateData = c.req.valid("json")
 
-  // Convert amount to string if it exists
-  const processedUpdateData = {
-    ...updateData,
-    amount:
-      updateData.amount !== undefined ? String(updateData.amount) : undefined,
-  }
-
   const [existingTeamUser] = await dbClientInWorker(c.env.DATABASE_URL)
     .select()
     .from(teamUsers)
@@ -201,7 +194,7 @@ teamUserRouter.openapi(updateTeamUserRoute, async (c) => {
   await dbClientInWorker(c.env.DATABASE_URL)
     .update(teamUsers)
     .set({
-      ...processedUpdateData,
+      ...updateData,
       updatedAt: new Date(),
     })
     .where(eq(teamUsers.id, id))
