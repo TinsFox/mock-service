@@ -1,3 +1,3 @@
 [vars]
-SECRET_KEY = ""
+JWT_SECRET = ""
 COOKIE_KEY = "token"

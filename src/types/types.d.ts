@@ -3,9 +3,9 @@ import type { RequestIdVariables } from "hono/request-id"
 import type { JwtVariables } from "hono/jwt"
 
 export type Bindings = {
-  SECRET_KEY: string
   COOKIE_KEY: string
   DATABASE_URL: string
+  JWT_SECRET: string
 }
 
 export interface IPayload {

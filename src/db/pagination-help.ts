@@ -5,26 +5,28 @@ interface PaginationParams<T extends SQLiteTableWithColumns<any>> {
   table: T
   page: number
   pageSize: number
-  searchParams: Record<string, string>
   dbClient: any
+  searchParams?: Record<string, string>
 }
 
 export async function paginateQuery<T extends SQLiteTableWithColumns<any>>({
   table,
   page,
   pageSize,
-  searchParams,
   dbClient,
+  searchParams,
 }: PaginationParams<T>) {
   // 构建基础查询
   let whereConditions: SQL[] = []
 
   // 处理搜索参数
-  Object.entries(searchParams).forEach(([key, value]) => {
-    if (value && table[key]) {
-      whereConditions.push(like(table[key], `%${value}%`))
-    }
-  })
+  if (searchParams) {
+    Object.entries(searchParams).forEach(([key, value]) => {
+      if (value && table[key]) {
+        whereConditions.push(like(table[key], `%${value}%`))
+      }
+    })
+  }
 
   // 构建 WHERE 子句
   const whereClause =
@@ -47,5 +49,6 @@ export async function paginateQuery<T extends SQLiteTableWithColumns<any>>({
   return {
     data,
     total: totalResult.value,
+    totalPages: Math.ceil(totalResult.value / pageSize),
   }
 }

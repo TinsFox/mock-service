@@ -1,22 +1,45 @@
-import { Hono } from "hono"
+import { OpenAPIHono } from "@hono/zod-openapi"
 import { csrf } from "hono/csrf"
 import { cors } from "hono/cors"
-import { userRouter } from "./module/user"
-import { albumRouter } from "./module/album"
-import { authRouter } from "./module/auth"
-
-import { teamUserRouter } from "./module/team-user"
+import { userRouter } from "./module/users/users"
+import { albumRouter } from "./module/albums/albums"
+import { authRouter } from "./module/auth/auth"
+import { teamUserRouter } from "./module/team-users/team-users"
 import { logger } from "hono/logger"
 import { requestId } from "hono/request-id"
-
 import { authMiddleware } from "./middleware/auth-middleware"
-import { taskRouter } from "./module/task"
-
-const app = new Hono<HonoEnvType>()
+import { taskRouter } from "./module/tasks/tasks"
+import { apiReference } from "@scalar/hono-api-reference"
+import { showRoutes } from "hono/dev"
+const app = new OpenAPIHono<HonoEnvType>().basePath("/api")
 
 app.get("/", (c) => {
   return c.text(`Your request id is ${c.get("requestId")}`)
 })
+
+app.doc("/doc", {
+  openapi: "3.0.0",
+  info: {
+    title: "API Documentation",
+    version: "1.0.0",
+    description: "Complete API documentation for all routes",
+  },
+  servers: [
+    {
+      url: "http://localhost:8787",
+      description: "Development server",
+    },
+  ],
+})
+
+app.get(
+  "/reference",
+  apiReference({
+    spec: {
+      url: "http://localhost:8787/api/doc",
+    },
+  })
+)
 
 app.use("*", logger())
 app.use("*", csrf())
@@ -24,18 +47,13 @@ app.use("*", cors())
 app.use("*", requestId())
 app.use("*", authMiddleware)
 
-const baseUrl = "/api"
+app.route(`/auth`, authRouter)
+app.route(`/albums`, albumRouter)
+app.route(`/users`, userRouter)
+app.route(`/team-users`, teamUserRouter)
+app.route(`/tasks`, taskRouter)
 
-app.route(`${baseUrl}/auth`, authRouter)
-
-app.route(`${baseUrl}/albums`, albumRouter)
-
-app.route(`${baseUrl}/user`, userRouter)
-
-app.route(`${baseUrl}/team-users`, teamUserRouter)
-
-app.route(`${baseUrl}/tasks`, taskRouter)
-
+showRoutes(app)
 export default {
   ...app,
   fetch: app.fetch,

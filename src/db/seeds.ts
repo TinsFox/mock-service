@@ -15,7 +15,7 @@ import {
   generateRandomAlbum,
 } from "./utils"
 import { User } from "./schema"
-import { createPassword } from "../lib/crypto"
+import { hashPassword } from "../lib/crypto"
 import { faker } from "@faker-js/faker"
 
 export async function seedAdminUser() {
@@ -27,7 +27,7 @@ export async function seedAdminUser() {
       avatar: faker.image.avatarGitHub(),
       birthdate: faker.date.birthdate().toISOString(),
       bio: faker.lorem.paragraph(),
-      password: createPassword("admin"),
+      password: hashPassword("admin"),
     },
     {
       email: "user@shadcn.com",
@@ -36,7 +36,7 @@ export async function seedAdminUser() {
       avatar: faker.image.avatarGitHub(),
       birthdate: faker.date.birthdate().toISOString(),
       bio: faker.lorem.paragraph(),
-      password: createPassword("user"),
+      password: hashPassword("user"),
     },
     {
       email: "guest@shadcn.com",
@@ -45,7 +45,7 @@ export async function seedAdminUser() {
       avatar: faker.image.avatarGitHub(),
       birthdate: faker.date.birthdate().toISOString(),
       bio: faker.lorem.paragraph(),
-      password: createPassword("guest"),
+      password: hashPassword("guest"),
     },
   ]
   try {
