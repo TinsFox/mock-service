@@ -1,76 +1,72 @@
-import { dbClient } from "./client.node"
-import {
-  Album,
-  albums,
-  Task,
-  tasks,
-  TeamUser,
-  teamUsers,
-  users,
-} from "./schema"
-import {
-  generateRandomTask,
-  generateRandomTeamUser,
-  generateRandomUser,
-  generateRandomAlbum,
-} from "./utils"
-import { User } from "./schema"
-import { hashPassword } from "../lib/crypto"
-import { faker } from "@faker-js/faker"
+import { dbClient } from './client.node'
+import { generateRandomTask, generateRandomTeamUser, generateRandomAlbum } from './utils'
+import { hashPassword } from '../lib/crypto'
+import { faker } from '@faker-js/faker'
+import { NewUser, users } from '@/db/schema/users.schema'
+import { NewAlbumType, albumsTableSchema } from '@/db/schema/album.schema'
+import { NewTask, tasks } from '@/db/schema/tasks.schema'
 
 export async function seedAdminUser() {
-  const adminUser = [
+  const adminUser: NewUser[] = [
     {
-      email: "admin@shadcn.com",
-      username: "admin",
-      name: "Admin",
+      email: 'admin@shadcn.com',
+      username: 'admin',
+      name: 'Admin',
       avatar: faker.image.avatarGitHub(),
       birthdate: faker.date.birthdate().toISOString(),
       bio: faker.lorem.paragraph(),
-      password: hashPassword("admin"),
+      password: hashPassword('admin'),
+      status: 'active',
+      role: 'admin',
+      amount: '1000',
     },
     {
-      email: "user@shadcn.com",
-      username: "user",
-      name: "User",
+      email: 'user@shadcn.com',
+      username: 'user',
+      name: 'User',
       avatar: faker.image.avatarGitHub(),
       birthdate: faker.date.birthdate().toISOString(),
       bio: faker.lorem.paragraph(),
-      password: hashPassword("user"),
+      password: hashPassword('user'),
+      status: 'active',
+      role: 'member',
+      amount: '1000',
     },
     {
-      email: "guest@shadcn.com",
-      username: "guest",
-      name: "Guest",
+      email: 'guest@shadcn.com',
+      username: 'guest',
+      name: 'Guest',
       avatar: faker.image.avatarGitHub(),
       birthdate: faker.date.birthdate().toISOString(),
       bio: faker.lorem.paragraph(),
-      password: hashPassword("guest"),
+      password: hashPassword('guest'),
+      status: 'active',
+      role: 'guest',
+      amount: '1000',
     },
   ]
   try {
-    console.log("📝 Inserting admin user", adminUser.length)
+    await dbClient.delete(users)
+    console.log('📝 Inserting admin user', adminUser.length)
     await dbClient.insert(users).values(adminUser)
   } catch (err) {
     console.error(err)
   }
 }
 
-export async function seedTeams(input: { count: number }) {
+export async function seedUsers(input: { count: number }) {
   const count = input.count ?? 100
 
   try {
-    const allTeams: TeamUser[] = []
+    const allUsers: NewUser[] = []
 
     for (let i = 0; i < count; i++) {
-      allTeams.push(generateRandomTeamUser())
+      allUsers.push(generateRandomTeamUser())
     }
 
-    await dbClient.delete(teamUsers)
+    console.log('📝 Inserting users', allUsers.length)
 
-    console.log("📝 Inserting teams", allTeams.length)
-
-    await dbClient.insert(teamUsers).values(allTeams).onConflictDoNothing()
+    await dbClient.insert(users).values(allUsers).onConflictDoNothing()
   } catch (err) {
     console.error(err)
   }
@@ -79,7 +75,7 @@ export async function seedTasks(input: { count: number }) {
   const count = input.count ?? 100
 
   try {
-    const allTasks: Task[] = []
+    const allTasks: NewTask[] = []
 
     for (let i = 0; i < count; i++) {
       allTasks.push(generateRandomTask())
@@ -87,7 +83,7 @@ export async function seedTasks(input: { count: number }) {
 
     await dbClient.delete(tasks)
 
-    console.log("📝 Inserting tasks", allTasks.length)
+    console.log('📝 Inserting tasks', allTasks.length)
 
     await dbClient.insert(tasks).values(allTasks).onConflictDoNothing()
   } catch (err) {
@@ -99,17 +95,17 @@ export async function seedAlbums(input: { count: number }) {
   const count = input.count ?? 100
 
   try {
-    const allAlbums: Album[] = []
+    const allAlbums: NewAlbumType[] = []
 
     for (let i = 0; i < count; i++) {
       allAlbums.push(generateRandomAlbum())
     }
 
-    await dbClient.delete(albums)
+    await dbClient.delete(albumsTableSchema)
 
-    console.log("📝 Inserting albums", allAlbums.length)
+    console.log('📝 Inserting albums', allAlbums.length)
 
-    await dbClient.insert(albums).values(allAlbums).onConflictDoNothing()
+    await dbClient.insert(albumsTableSchema).values(allAlbums).onConflictDoNothing()
   } catch (err) {
     console.error(err)
   }

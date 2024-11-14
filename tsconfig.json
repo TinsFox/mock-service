@@ -6,15 +6,15 @@
     "strict": true,
     "skipLibCheck": true,
     "lib": ["ESNext"],
-    "types": [
-      "vitest/globals",
-      "node",
-      "@cloudflare/vitest-pool-workers",
-      "@cloudflare/workers-types/2023-07-01"
-    ],
+    "types": ["vitest/globals", "node", "@cloudflare/vitest-pool-workers", "@cloudflare/workers-types/2023-07-01"],
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "baseUrl": ".",
+    // "noErrorTruncation": true,
+    "paths": {
+      "@/*": ["src/*"]
+    }
   },
   "include": ["src"]
 }

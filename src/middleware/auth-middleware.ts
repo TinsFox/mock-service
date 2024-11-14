@@ -1,13 +1,7 @@
-import { jwt } from "hono/jwt"
-import { Context, Next } from "hono"
+import { jwt } from 'hono/jwt'
+import { Context, Next } from 'hono'
 
-const authWhiteList = [
-  "/api/auth/login",
-  "/api/auth/register",
-  "/api/seed",
-  "/reference",
-  "/doc",
-]
+const authWhiteList = ['/api/auth/login', '/api/auth/register', '/api/seed', '/reference', '/doc']
 
 export const authMiddleware = (c: Context, next: Next) => {
   if (authWhiteList.length === 0) {

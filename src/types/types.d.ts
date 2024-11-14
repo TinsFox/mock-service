@@ -1,6 +1,6 @@
-import type { TimingVariables } from "hono/timing"
-import type { RequestIdVariables } from "hono/request-id"
-import type { JwtVariables } from "hono/jwt"
+import type { TimingVariables } from 'hono/timing'
+import type { RequestIdVariables } from 'hono/request-id'
+import type { JwtVariables } from 'hono/jwt'
 
 export type Bindings = {
   COOKIE_KEY: string

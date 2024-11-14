@@ -1,177 +1,141 @@
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi"
-import { dbClientInWorker } from "../../db/client.serverless"
-import { users } from "../../db/schema"
-import { count, eq } from "drizzle-orm"
-import {
-  UpdateUserSchema,
-  ParamsSchema,
-  SearchQuerySchema,
-  UserResponseSchema,
-} from "./schema"
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
+import { dbClientInWorker } from '../../db/client.serverless'
+import { eq } from 'drizzle-orm'
+import { UpdateUserSchema, ParamsSchema, UserResponseSchema, SearchQuerySchema } from './schema'
+import { count } from 'drizzle-orm'
+import { BaseDetailSchema, BaseErrorSchema, BasePaginationSchema, BasePaginateQuerySchema } from '@/schema/base'
+import { users } from '@/db/schema/users.schema'
 
 const userRouter = new OpenAPIHono<HonoEnvType>()
 
-// 添加获取用户列表的路由配置
 const getUsersRoute = createRoute({
-  method: "get",
-  path: "",
+  method: 'get',
+  path: '',
+  tags: ['Users'],
+  summary: 'Get users list',
+  description: 'Retrieve a paginated list of users with optional search query',
   request: {
-    query: z.object({
-      page: z.string().optional().default("1"),
-      pageSize: z.string().optional().default("10"),
-    }),
+    query: BasePaginateQuerySchema.merge(SearchQuerySchema.partial()),
   },
   responses: {
     200: {
       content: {
-        "application/json": {
-          schema: z.object({
-            code: z.number(),
-            users: z.array(UserResponseSchema),
-            total: z.array(
-              z.object({
-                value: z.number(),
-              })
-            ),
-            page: z.number(),
-            pageSize: z.number(),
-            totalPages: z.number(),
-          }),
+        'application/json': {
+          schema: BasePaginationSchema(UserResponseSchema),
         },
       },
-      description: "Successfully retrieved users list",
+      description: 'Successfully retrieved users list',
     },
   },
 })
 
 // 修改获取用户信息的路由配置
 const getUserInfoRoute = createRoute({
-  method: "get",
-  path: "/info",
+  method: 'get',
+  path: '/info',
+  tags: ['Users'],
+  summary: 'Get user info',
+  description: "Retrieve the current user's information",
   security: [{ Bearer: [] }],
   responses: {
     200: {
       content: {
-        "application/json": {
-          schema: UserResponseSchema,
+        'application/json': {
+          schema: BaseDetailSchema(UserResponseSchema),
         },
       },
-      description: "Successfully retrieved user info",
-    },
-    401: {
-      content: {
-        "application/json": {
-          schema: z.object({
-            code: z.number(),
-            msg: z.string(),
-          }),
-        },
-      },
-      description: "Unauthorized",
+      description: 'Successfully retrieved user info',
     },
     404: {
       content: {
-        "application/json": {
-          schema: z.object({
-            code: z.number(),
-            msg: z.string(),
-          }),
+        'application/json': {
+          schema: BaseErrorSchema,
         },
       },
-      description: "User not found",
+      description: 'User not found',
     },
   },
 })
 
 // 修改获取指定用户的路由配置
 const getUserByIdRoute = createRoute({
-  method: "get",
-  path: "/{id}",
+  method: 'get',
+  path: '/{id}',
+  tags: ['Users'],
+  summary: 'Get user by id',
+  description: 'Retrieve a user by their ID',
   request: {
     params: ParamsSchema,
   },
   responses: {
     200: {
       content: {
-        "application/json": {
-          schema: z.object({
-            user: z.array(UserResponseSchema),
-          }),
+        'application/json': {
+          schema: BaseDetailSchema(UserResponseSchema),
         },
       },
-      description: "Successfully retrieved user",
+      description: 'Successfully retrieved user',
     },
     400: {
       content: {
-        "application/json": {
-          schema: z.object({
-            code: z.number(),
-            msg: z.string(),
-          }),
+        'application/json': {
+          schema: BaseErrorSchema,
         },
       },
-      description: "Bad request",
+      description: 'Bad request',
     },
     404: {
       content: {
-        "application/json": {
-          schema: z.object({
-            code: z.number(),
-            msg: z.string(),
-          }),
+        'application/json': {
+          schema: BaseErrorSchema,
         },
       },
-      description: "User not found",
+      description: 'User not found',
     },
   },
 })
 
-// 修改现有的路由处理器，使用 OpenAPI 配置
 userRouter.openapi(getUsersRoute, async (c) => {
-  const { page, pageSize } = c.req.valid("query")
+  const { page, pageSize } = c.req.valid('query')
 
-  const [allUsers, total] = await Promise.all([
-    dbClientInWorker(c.env.DATABASE_URL)
-      .select({
-        id: users.id,
-        email: users.email,
-        name: users.name,
-        avatar: users.avatar,
-        createdAt: users.createdAt,
-        updatedAt: users.updatedAt,
-      })
-      .from(users),
-    dbClientInWorker(c.env.DATABASE_URL).select({ value: count() }).from(users),
-  ])
+  const allUsers = await dbClientInWorker(c.env.DATABASE_URL)
+    .select()
+    .from(users)
+    .offset((page - 1) * pageSize)
+
+  const totalResult = await dbClientInWorker(c.env.DATABASE_URL).select({ count: count() }).from(users)
+  const total = Number(totalResult[0].count)
 
   return c.json({
     code: 200,
-    users: allUsers.map((user) => ({
-      ...user,
-      createdAt: user.createdAt.toISOString(),
-      updatedAt: user.updatedAt.toISOString(),
-    })),
+    list: allUsers,
+    msg: 'Get user list success',
     total,
     page: Number(page),
     pageSize: Number(pageSize),
-    totalPages: Math.ceil(Number(total[0].value) / Number(pageSize)),
+    totalPages: Math.ceil(total / pageSize),
   })
 })
 
-// 修改 getUserInfo 处理器的响应
 userRouter.openapi(getUserInfoRoute, async (c) => {
-  const payload = c.get("jwtPayload")
-  console.log("payload: ", payload)
+  const payload = c.get('jwtPayload')
 
   const [user] = await dbClientInWorker(c.env.DATABASE_URL)
     .select({
       id: users.id,
       email: users.email,
+      password: users.password,
       name: users.name,
       username: users.username,
       avatar: users.avatar,
+      birthdate: users.birthdate,
+      registeredAt: users.registeredAt,
       createdAt: users.createdAt,
       updatedAt: users.updatedAt,
+      status: users.status,
+      role: users.role,
+      bio: users.bio,
+      amount: users.amount,
     })
     .from(users)
     .where(eq(users.id, payload.sub))
@@ -180,68 +144,92 @@ userRouter.openapi(getUserInfoRoute, async (c) => {
     return c.json(
       {
         code: 404,
-        msg: "User not found",
+        msg: 'User not found',
+        data: null,
       },
-      404
+      404,
     )
   }
 
   return c.json(
     {
-      ...user,
-      createdAt: user.createdAt.toISOString(),
-      updatedAt: user.updatedAt.toISOString(),
+      code: 200,
+      msg: 'Get user info success',
+      data: {
+        ...user,
+        birthdate: user.birthdate?.toString() ?? null,
+        registeredAt: user.registeredAt.toISOString(),
+        createdAt: user.createdAt.toISOString(),
+        updatedAt: user.updatedAt.toISOString(),
+        amount: user.amount?.toString() ?? '0',
+      },
     },
-    200
+    200,
   )
 })
 
-// 修改 getUserById 处理器的响应
 userRouter.openapi(getUserByIdRoute, async (c) => {
-  const { id } = c.req.valid("param")
+  const { id } = c.req.valid('param')
 
-  const user = await dbClientInWorker(c.env.DATABASE_URL)
+  const [user] = await dbClientInWorker(c.env.DATABASE_URL)
     .select({
       id: users.id,
       email: users.email,
+      password: users.password,
       name: users.name,
+      username: users.username,
       avatar: users.avatar,
+      birthdate: users.birthdate,
+      registeredAt: users.registeredAt,
+      bio: users.bio,
+      role: users.role,
+      amount: users.amount,
+      status: users.status,
       createdAt: users.createdAt,
       updatedAt: users.updatedAt,
     })
     .from(users)
     .where(eq(users.id, id))
 
-  if (!user.length) {
+  if (!user) {
     return c.json(
       {
         code: 404,
-        msg: "User not found",
+        msg: 'User not found',
+        data: null,
       },
-      404
+      404,
     )
   }
 
   return c.json(
     {
-      user: user.map((u) => ({
-        ...u,
-        createdAt: u.createdAt.toISOString(),
-        updatedAt: u.updatedAt.toISOString(),
-      })),
+      code: 200,
+      msg: 'Get user success',
+      data: {
+        ...user,
+        birthdate: user.birthdate?.toString() ?? null,
+        registeredAt: user.registeredAt.toISOString(),
+        createdAt: user.createdAt.toISOString(),
+        updatedAt: user.updatedAt.toISOString(),
+        amount: user.amount?.toString() ?? '0',
+      },
     },
-    200
+    200,
   )
 })
 
 const updateUserRoute = createRoute({
-  method: "put",
-  path: "/{id}",
+  method: 'put',
+  path: '/{id}',
+  tags: ['Users'],
+  summary: 'Update user',
+  description: "Update a user's information",
   request: {
     params: ParamsSchema,
     body: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: UpdateUserSchema,
         },
       },
@@ -250,32 +238,32 @@ const updateUserRoute = createRoute({
   responses: {
     200: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: z.object({
             code: z.number(),
             msg: z.string(),
           }),
         },
       },
-      description: "User updated successfully",
+      description: 'User updated successfully',
     },
     400: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: z.object({
             code: z.number(),
             msg: z.string(),
           }),
         },
       },
-      description: "Invalid request",
+      description: 'Invalid request',
     },
   },
 })
 
 userRouter.openapi(updateUserRoute, async (c) => {
-  const { id } = c.req.valid("param")
-  const updateData = c.req.valid("json")
+  const { id } = c.req.valid('param')
+  const updateData = c.req.valid('json')
 
   await dbClientInWorker(c.env.DATABASE_URL)
     .update(users)
@@ -287,69 +275,68 @@ userRouter.openapi(updateUserRoute, async (c) => {
 
   return c.json({
     code: 200,
-    msg: "Update user success",
+    msg: 'Update user success',
   })
 })
 
 // 添加删除用户的路由配置
 const deleteUserRoute = createRoute({
-  method: "delete",
-  path: "/{id}",
+  method: 'delete',
+  path: '/{id}',
+  tags: ['Users'],
+  summary: 'Delete user',
+  description: 'Delete a user by their ID',
   request: {
     params: ParamsSchema,
   },
   responses: {
     200: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: z.object({
             code: z.number(),
             msg: z.string(),
           }),
         },
       },
-      description: "User deleted successfully",
+      description: 'User deleted successfully',
     },
     404: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: z.object({
             code: z.number(),
             msg: z.string(),
           }),
         },
       },
-      description: "User not found",
+      description: 'User not found',
     },
   },
 })
 
 // 实现删除用户路由
 userRouter.openapi(deleteUserRoute, async (c) => {
-  const { id } = c.req.valid("param")
+  const { id } = c.req.valid('param')
 
-  const [existingUser] = await dbClientInWorker(c.env.DATABASE_URL)
-    .select()
-    .from(users)
-    .where(eq(users.id, id))
+  const [existingUser] = await dbClientInWorker(c.env.DATABASE_URL).select().from(users).where(eq(users.id, id))
 
   if (!existingUser) {
     return c.json(
       {
         code: 404,
-        msg: "User not found",
+        msg: 'User not found',
+        data: null,
       },
-      404
+      404,
     )
   }
 
-  await dbClientInWorker(c.env.DATABASE_URL)
-    .delete(users)
-    .where(eq(users.id, id))
+  await dbClientInWorker(c.env.DATABASE_URL).delete(users).where(eq(users.id, id))
 
   return c.json({
     code: 200,
-    msg: "Delete user success",
+    msg: 'Delete user success',
   })
 })
 

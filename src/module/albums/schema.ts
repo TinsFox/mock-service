@@ -1,67 +1,111 @@
-import { z } from "@hono/zod-openapi"
+import { z } from '@hono/zod-openapi'
+import { createAlbumSchema, selectAlbumSchema } from '@/db/schema/album.schema'
 
-// 定义查询参数 Schema
-export const QuerySchema = z.object({
-  page: z
-    .string()
-    .optional()
-    .openapi({
-      param: {
-        name: "page",
-        in: "query",
-      },
-      description: "Page number",
-      example: "1",
-    }),
-  pageSize: z
-    .string()
-    .optional()
-    .openapi({
-      param: {
-        name: "pageSize",
-        in: "query",
-      },
-      description: "Items per page",
-      example: "10",
-    }),
-})
-
-// 定义专辑 Schema
-export const AlbumSchema = z
-  .object({
+// 更新专辑 Schema
+export const updateAlbumSchema = createAlbumSchema
+  .extend({
     title: z.string().openapi({
-      description: "Album title",
-      example: "Greatest Hits",
+      description: 'Album title',
+      example: 'Greatest Hits',
     }),
-    cover: z.string().optional().openapi({
-      description: "Album cover URL",
-      example: "https://example.com/cover.jpg",
+    artist: z.string().openapi({
+      description: 'Artist name',
+      example: 'John Doe',
     }),
-    url: z.string().optional().openapi({
-      description: "Album URL",
-      example: "https://example.com/album",
+    description: z.string().nullable().openapi({
+      description: 'Album description',
+      example: 'The best album of the year',
     }),
-    slogan: z.string().optional().openapi({
-      description: "Album slogan",
-      example: "The best album ever",
+    coverUrl: z.string().nullable().openapi({
+      description: 'Album cover URL',
+      example: 'https://example.com/cover.jpg',
     }),
-    digitalDownloads: z.number().optional().openapi({
-      description: "Number of digital downloads",
-      example: 1000,
+    releaseDate: z.date().nullable().openapi({
+      description: 'Release date',
+      example: '2024-03-20',
+    }),
+    genre: z.string().nullable().openapi({
+      description: 'Music genre',
+      example: 'Rock',
+    }),
+    label: z.string().nullable().openapi({
+      description: 'Record label',
+      example: 'Universal Music',
+    }),
+    totalTracks: z.number().openapi({
+      description: 'Total number of tracks',
+      example: 12,
+    }),
+    playCount: z.number().openapi({
+      description: 'Total play count',
+      example: 1000000,
+    }),
+    likeCount: z.number().openapi({
+      description: 'Total likes',
+      example: 50000,
+    }),
+    isPublished: z.boolean().openapi({
+      description: 'Publication status',
+      example: true,
     }),
   })
-  .openapi("Album")
+  .openapi('Album')
 
-// 定义路由参数 Schema
-export const ParamsSchema = z.object({
+export const queryAlbumSchema = selectAlbumSchema.pick({ id: true }).extend({
   id: z
     .string()
     .uuid()
-    .openapi({
-      param: {
-        name: "id",
-        in: "path",
-      },
-      example: "123e4567-e89b-12d3-a456-426614174000",
-    }),
+    .openapi({ param: { name: 'id', in: 'path' } }),
+  title: z.string().optional().openapi({
+    description: 'Album title',
+    example: 'Greatest Hits',
+  }),
+  artist: z.string().optional().openapi({
+    description: 'Artist name',
+    example: 'John Doe',
+  }),
+  description: z.string().nullable().openapi({
+    description: 'Album description',
+    example: 'The best album of the year',
+  }),
+  coverUrl: z.string().optional().nullable().openapi({
+    description: 'Album cover URL',
+    example: 'https://example.com/cover.jpg',
+  }),
+  releaseDate: z.date().optional().nullable().openapi({
+    description: 'Release date',
+    example: '2024-03-20',
+  }),
+  genre: z.string().optional().nullable().openapi({
+    description: 'Music genre',
+    example: 'Rock',
+  }),
+  label: z.string().optional().nullable().openapi({
+    description: 'Record label',
+    example: 'Universal Music',
+  }),
+  totalTracks: z.number().optional().nullable().openapi({
+    description: 'Total number of tracks',
+    example: 12,
+  }),
+  playCount: z.number().optional().nullable().openapi({
+    description: 'Total play count',
+    example: 1000000,
+  }),
+  likeCount: z.number().optional().nullable().openapi({
+    description: 'Total likes',
+    example: 50000,
+  }),
+  isPublished: z.boolean().nullable().openapi({
+    description: 'Publication status',
+    example: true,
+  }),
+  createdAt: z.date().optional().openapi({
+    description: 'Creation date',
+    example: '2024-03-20',
+  }),
+  updatedAt: z.date().optional().openapi({
+    description: 'Update date',
+    example: '2024-03-20',
+  }),
 })
