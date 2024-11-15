@@ -101,7 +101,8 @@ userRouter.openapi(getUsersRoute, async (c) => {
   const allUsers = await dbClientInWorker(c.env.DATABASE_URL)
     .select()
     .from(users)
-    .offset((page - 1) * pageSize)
+    .offset(page * pageSize)
+    .limit(pageSize)
 
   const totalResult = await dbClientInWorker(c.env.DATABASE_URL).select({ count: count() }).from(users)
   const total = Number(totalResult[0].count)

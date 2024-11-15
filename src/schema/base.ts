@@ -58,7 +58,7 @@ export const BasePaginateQuerySchema = z.object({
       description: 'Page number',
       example: 1,
     })
-    .default(1),
+    .default(0),
   pageSize: z.coerce
     .number()
     .optional()
