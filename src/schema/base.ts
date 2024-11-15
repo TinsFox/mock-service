@@ -6,7 +6,7 @@ export const BaseSuccessSchema = z.object({
     description: 'Response status code',
     example: 200,
   }),
-  msg: z.string().openapi({
+  msg: z.string().optional().openapi({
     description: 'Response message',
     example: 'Success',
   }),
@@ -47,8 +47,9 @@ export const BasePaginationSchema = <T extends z.ZodType>(dataSchema: T) =>
 export type BasePaginationSchemaType<T extends z.ZodType> = z.infer<ReturnType<typeof BasePaginationSchema<T>>>
 
 export const BasePaginateQuerySchema = z.object({
-  page: z
+  page: z.coerce
     .number()
+    .optional()
     .openapi({
       param: {
         name: 'page',
@@ -58,8 +59,9 @@ export const BasePaginateQuerySchema = z.object({
       example: 1,
     })
     .default(1),
-  pageSize: z
+  pageSize: z.coerce
     .number()
+    .optional()
     .openapi({
       param: {
         name: 'pageSize',
